@@ -22,7 +22,7 @@ When adding this field to a section, the following options are available to you:
 * **Open links in a new window** enforces the hyperlink to spawn a new tab/window
 * **Hide this field on publish page** hides the hyperlink in the entry edit form
 
-To enable the Preview link you need to attach the field to the datasource which corresponds with the Anchor URL.
+**To enable the Preview link you need to attach the field to the datasource which corresponds with the Anchor URL.**
 
 ## Credits
 

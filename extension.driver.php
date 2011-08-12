@@ -1,33 +1,88 @@
 <?php
 	
-	class Extension_Entry_URL_Field extends Extension {
+	require_once(TOOLKIT . '/class.entrymanager.php');
+	require_once(TOOLKIT . '/class.datasourcemanager.php');
+	require_once(TOOLKIT . '/class.fieldmanager.php');
+	
+	class Extension_Preview_URL_Field extends Extension {
 		
 		protected static $fields = array();
 		
+		/**
+		 * @var DatasourceManager
+		 */
+		public static $datasourceManager = null;
+		
+		/**
+		 * @var FieldManager
+		 */
+		public static $fieldManager = null;
+		
+		/**
+		 * @var dsContents
+		 */
+		public $dsContents;
+		
+		/**
+		 * @var dsFilter
+		 */
+		public $dsFilter;
+
 		public function about() {
 			return array(
-				'name'			=> 'Field: Entry URL',
+				'name'			=> 'Field: Preview URL',
 				'version'		=> '1.1',
 				'release-date'	=> '2011-02-07',
 				'author'		=> array(
-					'name'			=> 'Nick Dunn',
-					'website'		=> 'http://nick-dunn.co.uk/'
+					'name'			=> 'Nick Ryall',
+					'website'		=> 'http://randb.com.au/'
 				),
-				'description' => 'Add a hyperlink in the backend to view an entry page/URL in the frontend'
+				'description' => 'Add an temporary hyperlink in the backend to view an entry page/URL in the frontend'
 			);
 		}
 		
 		public function uninstall() {
-			$this->_Parent->Database->query("DROP TABLE `tbl_fields_entry_url`");
+		
+			//CREATE THE HORRIBLE FILTER STRING
+			$this->dsFilter = '			//PREVIEW LINK EXTENSION: Remove Filters'.PHP_EOL;
+			$this->dsFilter .= '			if(sha1($_GET["entryid"]) == $_GET["key"]) {'.PHP_EOL;
+			$this->dsFilter .= '				$filters = $this->dsParamFILTERS;'.PHP_EOL;
+			$this->dsFilter .= '				foreach($filters as $key=>$filter) {'.PHP_EOL;
+			$this->dsFilter .= '					unset($this->dsParamFILTERS[$key]);'.PHP_EOL;
+			$this->dsFilter .= '				}'.PHP_EOL;
+			$this->dsFilter .= '           		$this->dsParamFILTERS["id"] = $_GET["entryid"];'.PHP_EOL;
+			$this->dsFilter .= '			}';
+		
+			//Loop through all datasources and remove the preview code if present.
+			if(!isset(self::$datasourceManager)) {
+				self::$datasourceManager = new DatasourceManager(Symphony::Engine());
+			}
+			
+			$dses = self::$datasourceManager->listAll();
+			foreach($dses as $ds) {
+				$file = self::$datasourceManager->__getDriverPath($ds['handle']);
+	
+				//FIRST GET FILE CONTENTS
+				$current_content = file_get_contents($file);
+				
+				//THEN REMOVE FILTER CODE
+				$new_content = str_replace(PHP_EOL.PHP_EOL.$this->dsFilter, '', $current_content);
+				
+				//THEN REPALCE FILE CONTENTS
+				file_put_contents($file, $new_content);
+			}
+			
+			//DROP THE DB TABLE
+			$this->_Parent->Database->query("DROP TABLE `tbl_fields_preview_url`");
 		}
 		
 		public function install() {
 			$this->_Parent->Database->query("
-				CREATE TABLE IF NOT EXISTS `tbl_fields_entry_url` (
+				CREATE TABLE IF NOT EXISTS `tbl_fields_preview_url` (
 					`id` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
 					`field_id` INT(11) UNSIGNED NOT NULL,
 					`anchor_label` VARCHAR(255) DEFAULT NULL,
-					`expression` VARCHAR(255) DEFAULT NULL,					
+					`expression` VARCHAR(255) DEFAULT NULL,				
 					`new_window` ENUM('yes', 'no') DEFAULT 'no',
 					`hide` ENUM('yes', 'no') DEFAULT 'no',
 					PRIMARY KEY (`id`),
@@ -54,13 +109,81 @@
 					'page'		=> '/frontend/',
 					'delegate'	=> 'EventPostSaveFilter',
 					'callback'	=> 'compileFrontendFields'
-				)
+				),
+				array(
+					'page'		=> '/blueprints/datasources/',
+					'delegate'	=> 'DatasourcePreCreate',
+					'callback'	=> 'removeDSFilters'
+				),
+				array(
+					'page'		=> '/blueprints/datasources/',
+					'delegate'	=> 'DatasourcePreEdit',
+					'callback'	=> 'removeDSFilters'
+				),
+				array(
+					'page'		=> '/blueprints/datasources/',
+					'delegate'	=> 'DatasourcePostCreate',
+					'callback'	=> 'rewriteDS'
+				),
+				array(
+					'page'		=> '/blueprints/datasources/',
+					'delegate'	=> 'DatasourcePostEdit',
+					'callback'	=> 'rewriteDS'
+				),
+				
 			);
+		}
+	
+	/*-------------------------------------------------------------------------
+		Backend:
+	-------------------------------------------------------------------------*/
+			
+		public function removeDSFilters($context) {	
+		
+
+			//Check if there is a preview link field attached.
+			$has_preview_link = false;
+			if(!isset(self::$fieldManager)) {
+				self::$fieldManager = new fieldManager(Symphony::Engine());
+			}
+			foreach($context['elements'] as $element) {
+				$field_id = self::$fieldManager->fetchFieldIDFromElementName($element);
+				$field_type = self::$fieldManager->fetchFieldTypeFromID($field_id);
+				if($field_type == 'preview_url') {
+					$has_preview_link = true;
+				}
+			}
+			
+			$contents = $context['contents']; 
+			$first_line = '$result = new XMLElement($this->dsParamROOTELEMENT);';
+			
+			//CREATE THE HORRIBLE FILTER STRING
+			$this->dsFilter = '			//PREVIEW LINK EXTENSION: Remove Filters'.PHP_EOL;
+			$this->dsFilter .= '			if(sha1($_GET["entryid"]) == $_GET["key"]) {'.PHP_EOL;
+			$this->dsFilter .= '				$filters = $this->dsParamFILTERS;'.PHP_EOL;
+			$this->dsFilter .= '				foreach($filters as $key=>$filter) {'.PHP_EOL;
+			$this->dsFilter .= '					unset($this->dsParamFILTERS[$key]);'.PHP_EOL;
+			$this->dsFilter .= '				}'.PHP_EOL;
+			$this->dsFilter .= '           		$this->dsParamFILTERS["id"] = $_GET["entryid"];'.PHP_EOL;
+			$this->dsFilter .= '			}';
+			
+			if($has_preview_link) {
+				$contents = str_replace($first_line, $first_line.PHP_EOL.PHP_EOL.$this->dsFilter, $contents);
+			} else {
+				$contents = str_replace($this->dsFilter, '', $contents);
+			}	
+			$this->dsContents = $contents;
+		}
+		
+		public function rewriteDS($context) {
+			$file = $context['file'];
+			file_put_contents($file, $this->dsContents);
 		}
 		
 	/*-------------------------------------------------------------------------
 		Utilities:
 	-------------------------------------------------------------------------*/
+	
 		
 		public function getXPath($entry) {
 			$entry_xml = new XMLElement('entry');

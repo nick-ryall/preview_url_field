@@ -2,14 +2,14 @@
 	
 	if (!defined('__IN_SYMPHONY__')) die('<h2>Symphony Error</h2><p>You cannot directly access this file</p>');
 	
-	class FieldEntry_URL extends Field {
+	class FieldPreview_URL extends Field {
 		protected static $ready = true;
 		
 		public function __construct(&$parent) {
 			parent::__construct($parent);
 			
-			$this->_name = 'Entry URL';
-			$this->_driver = $this->_engine->ExtensionManager->create('entry_url_field');
+			$this->_name = 'Preview URL';
+			$this->_driver = $this->_engine->ExtensionManager->create('preview_url_field');
 			
 			// Set defaults:
 			$this->set('show_column', 'no');
@@ -25,6 +25,7 @@
 					`id` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
 					`entry_id` INT(11) UNSIGNED NOT NULL,
 					`value` TEXT DEFAULT NULL,
+					`key` TEXT DEFAULT NULL,
 					PRIMARY KEY (`id`),
 					KEY `entry_id` (`entry_id`),
 					FULLTEXT KEY `value` (`value`)
@@ -41,12 +42,14 @@
 			
 			$order = $this->get('sortorder');
 			
-			$label = Widget::Label('Anchor Label');
+			//var_dump(parent::findDefaults());
+			
+			/*$label = Widget::Label('Anchor Label');
 			$label->appendChild(Widget::Input(
 				"fields[{$order}][anchor_label]",
 				$this->get('anchor_label')
 			));
-			$wrapper->appendChild($label);
+			$wrapper->appendChild($label);*/
 			
 			$label = Widget::Label('Anchor URL (XPath expression)');
 			$label->appendChild(Widget::Input(
@@ -112,16 +115,17 @@
 			$label = Widget::Label($this->get('label'));
 			$span = new XMLElement('span', NULL, array('class' => 'frame'));
 			
+			
+			$callback = Administration::instance()->getPageCallback();
+			
 			$anchor = Widget::Anchor(
-				$this->get('anchor_label'),
-				$data['value']
+				$data['value'].'?entryid='.$callback['context']['entry_id'].'&key='.$data['key'],
+				$data['value'].'?entryid='.$callback['context']['entry_id'].'&key='.$data['key']
 			);
 			
 			if ($this->get('new_window') == 'yes') {
 				$anchor->setAttribute('target', '_blank');
 			}
-			
-			$callback = Administration::instance()->getPageCallback();
 			if (is_null($callback['context']['entry_id'])) {
 				$span->setValue(__('The link will be created after saving this entry'));
 				$span->setAttribute('class', 'inactive');
@@ -156,7 +160,7 @@
 		
 		public function appendFormattedElement(&$wrapper, $data, $encode = false) {
 			if (!self::$ready) return;
-			
+		
 			$element = new XMLElement($this->get('element_name'));
 			$element->setValue(General::sanitize($data['value']));
 			$wrapper->appendChild($element);
@@ -207,9 +211,13 @@
 				$expression
 			);
 			
+			$key = sha1($entry_id);
+			
+			
 			// Save:
 			$result = $this->Database->update(array(
-				'value'				=> $value
+				'value'				=> $value,
+				'key'				=> $key,
 			), "tbl_entries_data_{$field_id}", "
 				`entry_id` = '{$entry_id}'
 			");

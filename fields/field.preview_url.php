@@ -42,15 +42,6 @@
 			
 			$order = $this->get('sortorder');
 			
-			//var_dump(parent::findDefaults());
-			
-			/*$label = Widget::Label('Anchor Label');
-			$label->appendChild(Widget::Input(
-				"fields[{$order}][anchor_label]",
-				$this->get('anchor_label')
-			));
-			$wrapper->appendChild($label);*/
-			
 			$label = Widget::Label('Anchor URL (XPath expression)');
 			$label->appendChild(Widget::Input(
 				"fields[{$order}][expression]",

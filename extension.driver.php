@@ -45,12 +45,14 @@
 		
 			//CREATE THE HORRIBLE FILTER STRING
 			$this->dsFilter = '			//PREVIEW LINK EXTENSION: Remove Filters'.PHP_EOL;
-			$this->dsFilter .= '			if(sha1($_GET["entryid"]) == $_GET["key"]) {'.PHP_EOL;
-			$this->dsFilter .= '				$filters = $this->dsParamFILTERS;'.PHP_EOL;
-			$this->dsFilter .= '				foreach($filters as $key=>$filter) {'.PHP_EOL;
-			$this->dsFilter .= '					unset($this->dsParamFILTERS[$key]);'.PHP_EOL;
-			$this->dsFilter .= '				}'.PHP_EOL;
-			$this->dsFilter .= '           		$this->dsParamFILTERS["id"] = $_GET["entryid"];'.PHP_EOL;
+			$this->dsFilter .= '			if (!strpos($_SERVER[‘HTTP_USER_AGENT’],"Googlebot")) {'.PHP_EOL;
+			$this->dsFilter .= '				if(sha1($_GET["entryid"]) == $_GET["key"]) {'.PHP_EOL;
+			$this->dsFilter .= '					$filters = $this->dsParamFILTERS;'.PHP_EOL;
+			$this->dsFilter .= '					foreach($filters as $key=>$filter) {'.PHP_EOL;
+			$this->dsFilter .= '						unset($this->dsParamFILTERS[$key]);'.PHP_EOL;
+			$this->dsFilter .= '					}'.PHP_EOL;
+			$this->dsFilter .= '           			$this->dsParamFILTERS["id"] = $_GET["entryid"];'.PHP_EOL;
+			$this->dsFilter .= '				}'.PHP_EOL;;
 			$this->dsFilter .= '			}';
 		
 			//Loop through all datasources and remove the preview code if present.

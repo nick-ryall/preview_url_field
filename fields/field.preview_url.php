@@ -115,21 +115,19 @@
 			$label = Widget::Label($this->get('label'));
 			$span = new XMLElement('span', NULL, array('class' => 'frame'));
 			
-			
 			$callback = Administration::instance()->getPageCallback();
 			
-			$anchor = Widget::Anchor(
-				$data['value'].'?entryid='.$callback['context']['entry_id'].'&key='.$data['key'],
-				$data['value'].'?entryid='.$callback['context']['entry_id'].'&key='.$data['key']
-			);
-			
-			if ($this->get('new_window') == 'yes') {
-				$anchor->setAttribute('target', '_blank');
-			}
-			if (is_null($callback['context']['entry_id'])) {
+			if (is_null($callback['context']['entry_id']) || is_null($data['value'])) {
 				$span->setValue(__('The link will be created after saving this entry'));
 				$span->setAttribute('class', 'inactive');
 			} else {
+				$anchor = Widget::Anchor(
+					$data['value'].'?entryid='.$callback['context']['entry_id'].'&key='.$data['key'],
+					$data['value'].'?entryid='.$callback['context']['entry_id'].'&key='.$data['key']
+				);
+				if ($this->get('new_window') == 'yes') {
+					$anchor->setAttribute('target', '_blank');
+				}
 				$span->appendChild($anchor);
 			}
 			

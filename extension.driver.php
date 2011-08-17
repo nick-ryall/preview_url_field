@@ -139,13 +139,12 @@
 	-------------------------------------------------------------------------*/
 			
 		public function removeDSFilters($context) {	
-		
-
 			//Check if there is a preview link field attached.
 			$has_preview_link = false;
 			if(!isset(self::$fieldManager)) {
 				self::$fieldManager = new fieldManager(Symphony::Engine());
 			}
+			
 			foreach($context['elements'] as $element) {
 				$field_id = self::$fieldManager->fetchFieldIDFromElementName($element);
 				$field_type = self::$fieldManager->fetchFieldTypeFromID($field_id);
@@ -159,12 +158,14 @@
 			
 			//CREATE THE HORRIBLE FILTER STRING
 			$this->dsFilter = '			//PREVIEW LINK EXTENSION: Remove Filters'.PHP_EOL;
-			$this->dsFilter .= '			if(sha1($_GET["entryid"]) == $_GET["key"]) {'.PHP_EOL;
-			$this->dsFilter .= '				$filters = $this->dsParamFILTERS;'.PHP_EOL;
-			$this->dsFilter .= '				foreach($filters as $key=>$filter) {'.PHP_EOL;
-			$this->dsFilter .= '					unset($this->dsParamFILTERS[$key]);'.PHP_EOL;
-			$this->dsFilter .= '				}'.PHP_EOL;
-			$this->dsFilter .= '           		$this->dsParamFILTERS["id"] = $_GET["entryid"];'.PHP_EOL;
+			$this->dsFilter .= '			if (!strpos($_SERVER[‘HTTP_USER_AGENT’],"Googlebot")) {'.PHP_EOL;
+			$this->dsFilter .= '				if(sha1($_GET["entryid"]) == $_GET["key"]) {'.PHP_EOL;
+			$this->dsFilter .= '					$filters = $this->dsParamFILTERS;'.PHP_EOL;
+			$this->dsFilter .= '					foreach($filters as $key=>$filter) {'.PHP_EOL;
+			$this->dsFilter .= '						unset($this->dsParamFILTERS[$key]);'.PHP_EOL;
+			$this->dsFilter .= '					}'.PHP_EOL;
+			$this->dsFilter .= '           			$this->dsParamFILTERS["id"] = $_GET["entryid"];'.PHP_EOL;
+			$this->dsFilter .= '				}'.PHP_EOL;;
 			$this->dsFilter .= '			}';
 			
 			if($has_preview_link) {

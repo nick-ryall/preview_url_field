@@ -31,7 +31,7 @@
 		public function about() {
 			return array(
 				'name'			=> 'Field: Preview URL',
-				'version'		=> '1.1',
+				'version'		=> '1.0',
 				'release-date'	=> '2011-02-07',
 				'author'		=> array(
 					'name'			=> 'Nick Ryall',

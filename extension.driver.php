@@ -141,20 +141,25 @@
 	-------------------------------------------------------------------------*/
 			
 		public function removeDSFilters($context) {	
+		
+			
+			
 			//Check if there is a preview link field attached.
 			$has_preview_link = false;
 			if(!isset(self::$fieldManager)) {
 				self::$fieldManager = new fieldManager(Symphony::Engine());
 			}
 			
-			foreach($context['elements'] as $element) {
-				$field_id = self::$fieldManager->fetchFieldIDFromElementName($element);
-				$field_type = self::$fieldManager->fetchFieldTypeFromID($field_id);
-				if($field_type == 'preview_url') {
-					$has_preview_link = true;
+			
+			if (is_array($context['elements'])) {
+				foreach($context['elements'] as $element) {
+					$field_id = self::$fieldManager->fetchFieldIDFromElementName($element);
+					$field_type = self::$fieldManager->fetchFieldTypeFromID($field_id);
+					if($field_type == 'preview_url') {
+						$has_preview_link = true;
+					}
 				}
 			}
-			
 			$contents = $context['contents']; 
 			$first_line = '$result = new XMLElement($this->dsParamROOTELEMENT);';
 			

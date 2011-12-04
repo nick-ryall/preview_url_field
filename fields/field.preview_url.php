@@ -15,6 +15,7 @@
 			$this->set('show_column', 'no');
 			$this->set('new_window', 'no');
 			$this->set('hide', 'no');
+			
 		}
 		
 		public function createTable() {

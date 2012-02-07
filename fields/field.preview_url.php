@@ -114,8 +114,10 @@
 				$span->setAttribute('class', 'inactive');
 			} else {
 				$anchor = Widget::Anchor(
-					$data['value'].'?entryid='.$callback['context']['entry_id'].'&key='.$data['key'],
-					$data['value'].'?entryid='.$callback['context']['entry_id'].'&key='.$data['key']
+				
+				
+					URL.$data['value'].'?entryid='.$callback['context']['entry_id'].'&key='.$data['key'],
+					URL.$data['value'].'?entryid='.$callback['context']['entry_id'].'&key='.$data['key']
 				);
 				if ($this->get('new_window') == 'yes') {
 					$anchor->setAttribute('target', '_blank');
